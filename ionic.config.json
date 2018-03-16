@@ -1,0 +1,8 @@
+{
+  "name": "wifiTest",
+  "app_id": "d5dd973b",
+  "type": "ionic-angular",
+  "integrations": {
+    "cordova": {}
+  }
+}
