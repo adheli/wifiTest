@@ -1,6 +1,8 @@
 import { Component } from '@angular/core';
-import { NavController, AlertController } from 'ionic-angular';
+import { NavController } from 'ionic-angular';
+
 import { ConnectionProvider } from './../../providers/connection/connection';
+import { SocketConnectionProvider } from './../../providers/socket-connection/socket-connection';
 
 @Component({
   selector: 'page-home',
@@ -8,39 +10,22 @@ import { ConnectionProvider } from './../../providers/connection/connection';
 })
 export class HomePage {
 
-  constructor(public navCtrl: NavController,
-    public alertCtrl: AlertController,
-    private connectionProvider: ConnectionProvider) {
+  loader: any;
 
+  constructor(public navCtrl: NavController,
+    private connectionProvider: ConnectionProvider,
+    private socketProvider: SocketConnectionProvider) {
   }
 
   connectWifi() {
-    const connected = this.connectionProvider.connect();
-
-    if (connected) {
-      const alert = this.alertCtrl.create({
-        title: 'Connected?',
-        subTitle: 'YES!',
-        buttons: ['Well done!']
-      });
-
-      alert.present();
-    }
+    this.connectionProvider.connectWifi();
   }
 
   connectionStatus() {
-    const isConnected = this.connectionProvider.isConnected();
+    this.connectionProvider.connectionStatus();
+  }
 
-    if (isConnected) {
-      const connInfo = this.connectionProvider.status();
-
-      const alert = this.alertCtrl.create({
-        title: 'Status',
-        message: JSON.stringify(connInfo),
-        buttons: ['Well done!']
-      });
-
-      alert.present();
-    }
+  socketConnection() {
+    this.socketProvider.createSocket();
   }
 }

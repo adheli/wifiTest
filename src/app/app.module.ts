@@ -12,6 +12,7 @@ import { ListPage } from '../pages/list/list';
 import { StatusBar } from '@ionic-native/status-bar';
 import { SplashScreen } from '@ionic-native/splash-screen';
 import { ConnectionProvider } from '../providers/connection/connection';
+import { SocketConnectionProvider } from '../providers/socket-connection/socket-connection';
 
 @NgModule({
   declarations: [
@@ -38,6 +39,7 @@ import { ConnectionProvider } from '../providers/connection/connection';
     Network,
     Hotspot,
     ConnectionProvider,
+    SocketConnectionProvider,
   ]
 })
 export class AppModule {}

@@ -1,10 +1,10 @@
-import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 
+import { LoadingController, AlertController } from 'ionic-angular';
 import { Network } from '@ionic-native/network';
-import { Hotspot, HotspotNetwork } from '@ionic-native/hotspot';
+import { Hotspot } from '@ionic-native/hotspot';
 
-import { standardWifSSID, standardWifiPwd } from './../../util/constants';
+import { boardWifiSSID, boardWifiPwd } from './../../util/constants';
 
 /*
   Generated class for the ConnectionProvider provider.
@@ -15,79 +15,137 @@ import { standardWifSSID, standardWifiPwd } from './../../util/constants';
 @Injectable()
 export class ConnectionProvider {
 
-  constructor(public http: HttpClient, private network: Network, private hotspot: Hotspot) {
+  private loader: any;
+
+  constructor(private network: Network,
+    private hotspot: Hotspot,
+    public alertCtrl: AlertController,
+    public loadingCtrl: LoadingController) {
     console.log('Hello ConnectionProvider Provider');
   }
 
-  public isConnected(): boolean {
-    let isConnected = false;
+  private isConnected(callback) {
     let connectSubscription = this.network.onConnect().subscribe(() => {
-      console.log('network connected!');
       setTimeout(() => {
-        if (this.network.type === 'wifi') {
-          console.log('we got a wifi connection, woohoo!');
-        }
-      }, 3000);
-      isConnected = true;
+        callback({ connected: true });
+      });
     }, error => {
-      isConnected = false;
-      console.log(error);
+      setTimeout(() => {
+        callback({ connected: false });
+      });
     });
 
     connectSubscription.unsubscribe();
-    return isConnected;
   }
 
-  public disconnected() {
+  public disconnected(callback) {
     const disconnectSubscription = this.network.onDisconnect().subscribe(() => {
       console.log('network was disconnected :-(');
+      setTimeout(() => {
+        return callback({ connected: false });
+      });
     });
 
     disconnectSubscription.unsubscribe();
   }
 
-  public connect() {
-    let isConnected = false;
-
+  private connect(callback) {
     this.hotspot.isWifiOn().then(isOn => {
-
-      this.hotspot.connectToWifi(standardWifSSID, standardWifiPwd).then(success => {
-        console.log('connected!');
-        isConnected = true;
+      this.hotspot.connectToWifi(boardWifiSSID, boardWifiPwd).then(success => {
+        setTimeout(() => {
+          return callback({ connected: true });
+        });
       }, onrejected => {
-        console.log('onrejected');
-        console.log(onrejected);
+        console.error(onrejected);
+
+        setTimeout(() => {
+          return callback({ connected: false });
+        });
       }).catch(error => {
-        isConnected = false;
-        console.log(error);
+        console.error(error);
+
+        setTimeout(() => {
+          return callback({ connected: false });
+        });
       });
-
-    }, onRejected => {
-      console.log('onrejected');
-      console.log(onRejected);
-    }).catch(error => {
-      console.error(error);
-    })
-
-    return isConnected;
+    });
   }
 
-  public status(): any {
-    let info = {};
-
+  private status(callback) {
     this.hotspot.getConnectionInfo().then(hotspotInfo => {
-      info = {
-        wifiName: hotspotInfo.SSID,
-        ipAddress: hotspotInfo.IPAddress,
-        network: hotspotInfo.networkID
-      };
-    }, onrejected => {
-      console.log('onrejected');
-      console.log(onrejected);
-    }).catch(error => {
-      console.error(error);
+      console.log(hotspotInfo);
+      if (+hotspotInfo.networkID !== -1) {
+        setTimeout(() => {
+          callback({
+            connected: true,
+            wifiName: hotspotInfo.SSID,
+            ipAddress: hotspotInfo.IPAddress,
+            network: hotspotInfo.networkID
+          });
+        });
+      } else {
+        setTimeout(() => {
+          callback({ connected: false });
+        });
+      }
     });
+  }
 
-    return info;
+
+  private showLoading(): void {
+    this.loader = this.loadingCtrl.create({ content: 'Carregando' });
+    this.loader.present();
+  }
+
+  connectWifi() {
+    this.showLoading();
+
+    this.connect(result => {
+      this.loader.dismiss();
+      if (result.connected) {
+        localStorage.setItem('connected', 'y');
+
+        const alert = this.alertCtrl.create({
+          title: 'Connected?',
+          subTitle: 'YES!',
+          buttons: ['Well done!']
+        });
+
+        alert.present();
+      } else {
+        const alert = this.alertCtrl.create({
+          title: 'Connected?',
+          message: 'NO!',
+          buttons: ['oh damn!']
+        });
+
+        alert.present();
+      }
+    });
+  }
+
+  connectionStatus() {
+    this.status(result => {
+      console.log(result);
+      if (result.connected) {
+        const connInfo = JSON.stringify(result);
+
+        const alert = this.alertCtrl.create({
+          title: 'Status',
+          message: connInfo,
+          buttons: ['Well done!']
+        });
+
+        alert.present();
+      } else {
+        const alert = this.alertCtrl.create({
+          title: 'Status',
+          message: 'no connection',
+          buttons: ['oh damn!']
+        });
+
+        alert.present();
+      }
+    });
   }
 }
